@@ -73,11 +73,11 @@ Key Elements and Competencies:
 
   // --- API KEY CHECK ---
   useEffect(() => {
-    // This check is designed to be safe in any environment. It verifies if the API_KEY
-    // environment variable is accessible on the client-side.
+    // This check verifies if the API_KEY env var is available and not empty.
     const keyIsAvailable = typeof process !== 'undefined' &&
                            typeof process.env !== 'undefined' &&
-                           !!process.env.API_KEY;
+                           !!process.env.API_KEY &&
+                           process.env.API_KEY.trim() !== '';
     setIsApiConfigured(keyIsAvailable);
   }, []);
 
@@ -86,7 +86,7 @@ Key Elements and Competencies:
     e.preventDefault();
 
     if (!isApiConfigured) {
-      setError("Configuration Error: The API_KEY is not available. Please ensure it is correctly configured in your deployment environment.");
+      setError("Configuration Error: The API_KEY is not available or is empty. Please ensure it is correctly configured in your deployment environment.");
       setWarning('');
       setLearningPlan('');
       setSessionPlans('');
@@ -403,9 +403,27 @@ Key Elements and Competencies:
                 {isLoading ? 'Generating...' : 'Generate Plan'}
               </button>
             ) : (
-              <div className="error-message" style={{ marginTop: 'auto', textAlign: 'center' }}>
-                <strong>Configuration Error:</strong><br />
-                The <code>API_KEY</code> is not available. Please ensure it is configured in the deployment environment.
+              <div className="error-message" style={{ marginTop: 'auto', textAlign: 'center', padding: '1rem', background: 'rgba(255, 235, 238, 0.7)' }}>
+                <strong style={{ fontSize: '1.1rem', color: '#c51162' }}>Action Required</strong>
+                <p style={{ margin: '0.5rem 0 1rem 0', lineHeight: '1.5', color: '#AD1457' }}>
+                  This app requires a Google API Key. Please set the <code>API_KEY</code> environment variable in your Vercel (or other hosting provider) project settings.
+                </p>
+                <a 
+                  href="https://vercel.com/docs/projects/environment-variables" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="generate-btn"
+                  style={{
+                    display: 'inline-block',
+                    width: 'auto',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.9rem',
+                    textDecoration: 'none',
+                    background: 'var(--secondary-color)',
+                  }}
+                >
+                  Learn How on Vercel
+                </a>
               </div>
             )}
           </form>

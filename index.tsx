@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 
@@ -69,10 +69,30 @@ Key Elements and Competencies:
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
   const [activeTab, setActiveTab] = useState('learningPlan');
+  const [isApiConfigured, setIsApiConfigured] = useState(false);
+
+  // --- API KEY CHECK ---
+  useEffect(() => {
+    // This check is designed to be safe in any environment. It verifies if the API_KEY
+    // environment variable is accessible on the client-side.
+    const keyIsAvailable = typeof process !== 'undefined' &&
+                           typeof process.env !== 'undefined' &&
+                           !!process.env.API_KEY;
+    setIsApiConfigured(keyIsAvailable);
+  }, []);
 
   // --- API CALL ---
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isApiConfigured) {
+      setError("Configuration Error: The API_KEY is not available. Please ensure it is correctly configured in your deployment environment.");
+      setWarning('');
+      setLearningPlan('');
+      setSessionPlans('');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setWarning('');
@@ -87,7 +107,7 @@ Key Elements and Competencies:
 1.  **Generate a Learning Plan:**
     *   Create a single, complete HTML <table> with a <thead> and <tbody>. The table must have these columns: 'Week', 'Session No.', 'Session Title', 'Learning Outcome', 'Trainer Activities', 'Trainee Activities', 'Resources & Refs', 'Learning Checks/Assessments', 'Reflections & Date'.
     *   Distribute curriculum elements logically across the sessions based on the number of weeks and lessons per week.
-    *   For the 'Learning Checks/Assessments' column, you MUST place a formal formative assessment (e.g., "Formative Assessment: Practical Test" or "Quiz on Element 1") in the last session that covers each major 'Key Element' from the curriculum. For all other intermediate sessions, use informal checks like 'Oral questioning', 'Observation', or 'Group discussion'.
+    *   For the 'Learning Checks/Assessments' column, you MUST place a formal formative assessment (e.g., "Formative Assessment: Practical Test" or "Quiz on Element 1") in the last session that covers each major 'Key Element' from the curriculum. For all other intermediate sessions, use informal checks like 'Oral questioning', 'Observation', 'Group discussion'.
 
 2.  **Generate Session Plans:**
     *   After the learning plan table, add a separator line containing only '---SESSION-PLANS---'.
@@ -378,9 +398,16 @@ Key Elements and Competencies:
               <label htmlFor="curriculum">Unit Curriculum Paste Area</label>
               <textarea id="curriculum" value={curriculum} onChange={(e) => setCurriculum(e.target.value)} rows={10} required></textarea>
             </div>
-            <button type="submit" className="generate-btn" disabled={isLoading}>
-              {isLoading ? 'Generating...' : 'Generate Plan'}
-            </button>
+            {isApiConfigured ? (
+              <button type="submit" className="generate-btn" disabled={isLoading}>
+                {isLoading ? 'Generating...' : 'Generate Plan'}
+              </button>
+            ) : (
+              <div className="error-message" style={{ marginTop: 'auto', textAlign: 'center' }}>
+                <strong>Configuration Error:</strong><br />
+                The <code>API_KEY</code> is not available. Please ensure it is configured in the deployment environment.
+              </div>
+            )}
           </form>
         </aside>
 
@@ -389,7 +416,7 @@ Key Elements and Competencies:
           {error && <div className="error-message">{error}</div>}
           {warning && <div className="warning-message">{warning}</div>}
           
-          {!isLoading && !learningPlan && (
+          {!isLoading && !learningPlan && !error && (
              <div className="placeholder">
                 <div className="placeholder-icon">📄</div>
                 <h2>Your Plans Await</h2>
@@ -634,6 +661,13 @@ const STYLES = `
     border-radius: 6px;
     margin-bottom: 1rem;
   }
+  .error-message code {
+    background-color: rgba(255, 64, 129, 0.1);
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
   .warning-message {
     background-color: rgba(255, 167, 38, 0.1);
     color: #e65100;
